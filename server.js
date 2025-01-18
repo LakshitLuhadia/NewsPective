@@ -76,7 +76,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { getNewsFromMultipleSources } = require('./newsApi');
-const db = require('./db');
+const { getPerspectives } = require('./utils/perspectiveAnalyzer');
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -89,67 +89,51 @@ app.get('/', (req, res) => {
     <h1>Multi-Perspective News Aggregator API</h1>
     <p>Available endpoints:</p>
     <ul>
-      <li><a href="/api/news">/api/news</a> - Fetch latest news from multiple sources</li>
-      <li><a href="/api/perspectives">/api/perspectives</a> - Fetch different perspectives on a news topic</li>
+      <li><a href="/api/news">/api/news</a> - Fetch latest news</li>
+      <li>/api/perspective - Get specific perspective on news (POST)</li>
     </ul>
   `);
 });
 
-// Update the /api/news endpoint in server.js
 app.get('/api/news', async (req, res) => {
-    try {
-        console.log('Fetching news from multiple sources...');
-        const allNews = await getNewsFromMultipleSources();
-        console.log(`Successfully fetched ${allNews.length} articles`);
-        
-        if (!allNews || allNews.length === 0) {
-            console.log('No news articles found');
-            return res.json([]);
-        }
-
-        res.json(allNews);
-    } catch (error) {
-        console.error('Error in /api/news endpoint:', error);
-        res.status(500).json({ 
-            error: 'Internal server error',
-            message: error.message
-        });
-    }
-});
-
-
-app.get('/api/perspectives/:topic', async (req, res) => {
   try {
-    const { topic } = req.params;
-    const perspectives = await getNewsFromMultipleSources(topic);
-    res.json(perspectives);
+    console.log('Fetching news from multiple sources...');
+    const allNews = await getNewsFromMultipleSources();
+    console.log(`Successfully fetched ${allNews.length} articles`);
+    res.json(allNews);
   } catch (error) {
-    console.error('Error fetching perspectives:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error in /api/news endpoint:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
   }
 });
 
-// Helper function to group similar news stories
-function groupSimilarNews(articles) {
-  // Group articles by similar titles/topics
-  const groups = {};
-  
-  articles.forEach(article => {
-    const topic = extractMainTopic(article.title);
-    if (!groups[topic]) {
-      groups[topic] = [];
+// Add this new endpoint for perspectives
+app.post('/api/perspective', async (req, res) => {
+  try {
+    const { article, perspectiveType } = req.body;
+    console.log(`Generating ${perspectiveType} perspective for article: ${article.title}`);
+    
+    if (!article || !perspectiveType) {
+      return res.status(400).json({ 
+        error: 'Bad Request', 
+        message: 'Article and perspective type are required' 
+      });
     }
-    groups[topic].push(article);
-  });
 
-  return Object.values(groups);
-}
-
-// Helper function to extract main topic from title
-function extractMainTopic(title) {
-  // Simple implementation - you might want to use more sophisticated NLP here
-  return title.toLowerCase().split(' ').slice(0, 3).join(' ');
-}
+    const perspective = await getPerspectives(article, perspectiveType);
+    console.log('Perspective generated successfully');
+    res.json({ perspective: perspective.alternative });
+  } catch (error) {
+    console.error('Error generating perspective:', error);
+    res.status(500).json({ 
+      error: 'Internal server error', 
+      message: error.message 
+    });
+  }
+});
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

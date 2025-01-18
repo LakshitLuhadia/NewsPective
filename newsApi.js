@@ -74,10 +74,24 @@
 
 const axios = require('axios');
 
+const removeDuplicateNews = (newsArticles) => {
+  const uniqueArticles = [];
+  const titles = new Set();
+  
+  newsArticles.forEach(article => {
+    if (!titles.has(article.title)) {
+      titles.add(article.title);
+      uniqueArticles.push(article);
+    }
+  });
+  
+  return uniqueArticles;
+};
 async function getNewsFromMultipleSources(topic = '') {
     try {
         // Fetch from NewsData.io
-        const newsDataUrl = 'https://newsdata.io/api/1/news?apikey=pub_65771f25a5e212d02a2d814085e6df4e17c89&language=en';
+        const newsDataUrl = `https://newsdata.io/api/1/news?apikey=${process.env.NEWSDATA_API_KEY}&language=en`;
+        // const newsDataUrl = 'https://newsdata.io/api/1/news?apikey=pub_65771fb09f8213c1e308f29155fcd954ec968&language=en';
         console.log('Fetching from NewsData.io...');
         const newsDataResponse = await axios.get(newsDataUrl);
         
@@ -101,8 +115,13 @@ async function getNewsFromMultipleSources(topic = '') {
             category: article.category || []
         }));
 
-        console.log(`Processed ${newsDataArticles.length} articles`);
-        return newsDataArticles;
+        // Remove duplicate articles
+        const uniqueArticles = Array.from(
+            new Map(newsDataArticles.map(article => [article.title, article])).values()
+        );
+
+        console.log(`Processed ${uniqueArticles.length} unique articles`);
+        return uniqueArticles;
 
     } catch (error) {
         console.error('Error in getNewsFromMultipleSources:', error.message);
