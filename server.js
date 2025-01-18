@@ -135,6 +135,56 @@ app.post('/api/perspective', async (req, res) => {
   }
 });
 
+// const { generatePodcastScript } = require('./utils/podcastGenerator');
+
+// Add this new endpoint
+app.post('/api/generate-podcast', async (req, res) => {
+    try {
+        const { article, perspective } = req.body;
+        const script = await generatePodcastScript(article, perspective);
+        
+        if (!script) {
+            throw new Error('Failed to generate podcast script');
+        }
+        
+        res.json({ script });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// server.js
+const { generatePodcastScript } = require('./utils/podcastGenerator');
+const { convertToAudio } = require('./utils/audioGenerator');
+
+app.post('/api/generate-podcast', async (req, res) => {
+    try {
+        const { article, perspective } = req.body;
+        
+        // Generate script using Gemini
+        const script = await generatePodcastScript(article, perspective);
+        if (!script) {
+            throw new Error('Failed to generate podcast script');
+        }
+        
+        // Convert script to audio using Speechify
+        const audioUrl = await convertToAudio(script);
+        if (!audioUrl) {
+            throw new Error('Failed to convert script to audio');
+        }
+        
+        res.json({ 
+            script: script,
+            audioUrl: audioUrl 
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
