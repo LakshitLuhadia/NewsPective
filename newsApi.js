@@ -90,7 +90,8 @@ const removeDuplicateNews = (newsArticles) => {
 async function getNewsFromMultipleSources(topic = '') {
     try {
         // Fetch from NewsData.io
-        const newsDataUrl = 'https://newsdata.io/api/1/news?apikey=pub_65771fb09f8213c1e308f29155fcd954ec968&language=en';
+        const newsDataUrl = `https://newsdata.io/api/1/news?apikey=${process.env.NEWSDATA_API_KEY}&language=en`;
+        // const newsDataUrl = 'https://newsdata.io/api/1/news?apikey=pub_65771fb09f8213c1e308f29155fcd954ec968&language=en';
         console.log('Fetching from NewsData.io...');
         const newsDataResponse = await axios.get(newsDataUrl);
         
