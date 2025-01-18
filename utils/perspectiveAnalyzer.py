@@ -24,7 +24,7 @@ def get_alternative_perspective(article_text, perspective_type):
     Provide the alternative perspective in a concise paragraph.
     """
 
-    client = InferenceClient(token="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")
+    client = InferenceClient(token=os.getenv("HUGGINGFACE_API_KEY"))
 
     try:
         response = client.text_generation(
