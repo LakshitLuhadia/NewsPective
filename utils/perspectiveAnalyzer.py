@@ -1,7 +1,7 @@
 from huggingface_hub import InferenceClient
 import json
 import sys
-
+import os
 
 def get_alternative_perspective(article_text, perspective_type):
     perspective_prompts = {
