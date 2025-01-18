@@ -6,13 +6,18 @@ import {
   Box, 
   Button, 
   IconButton,
-  CircularProgress
+  CircularProgress,
+  Divider
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import HeadphonesIcon from '@mui/icons-material/Headphones';
 import { styled } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 
-// Styled components
+const AnimatedContent = motion.div;
+
+
+// Existing styled components remain the same
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
     width: '90%',
@@ -39,6 +44,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
   }
 }));
 
+// Existing PerspectiveButton and AnimatedContent remain the same...
 const PerspectiveButton = styled(Button)(({ theme, selected }) => ({
   borderRadius: '25px',
   padding: '10px 20px',
@@ -53,24 +59,26 @@ const PerspectiveButton = styled(Button)(({ theme, selected }) => ({
   },
 }));
 
-const AnimatedContent = styled(motion.div)({
-  width: '100%',
-  height: '100%',
-});
+
+
 
 function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
   const [selectedPerspective, setSelectedPerspective] = useState(null);
   const [loading, setLoading] = useState(false);
   const [perspective, setPerspective] = useState(null);
+  const [podcastLoading, setPodcastLoading] = useState(false);
+  const [podcastScript, setPodcastScript] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
 
   useEffect(() => {
-        if (!open) {
-            setSelectedPerspective(null);
-            setPerspective(null);
-        }
-    }, [open]);
+    if (!open) {
+      setSelectedPerspective(null);
+      setPerspective(null);
+      setPodcastScript(null);
+      setAudioUrl(null);
+    }
+  }, [open]);
 
-  // Add null check for article
   if (!article) return null;
 
   const perspectives = [
@@ -83,6 +91,8 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
   const handlePerspectiveClick = async (perspectiveId) => {
     setSelectedPerspective(perspectiveId);
     setLoading(true);
+    setPodcastScript(null);
+    setAudioUrl(null);
     try {
       const newPerspective = await onRequestPerspective(article, perspectiveId);
       setPerspective(newPerspective);
@@ -94,6 +104,32 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
     }
   };
 
+  const handleGeneratePodcast = async () => {
+    if (!selectedPerspective || !perspective) return;
+    
+    setPodcastLoading(true);
+    try {
+      const response = await fetch('/api/generate-podcast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          article,
+          perspective
+        })
+      });
+      
+      const data = await response.json();
+      setPodcastScript(data.script);
+      setAudioUrl(data.audioUrl);
+    } catch (error) {
+      console.error('Error generating podcast:', error);
+    } finally {
+      setPodcastLoading(false);
+    }
+  };
+
   return (
     <StyledDialog
       open={open}
@@ -102,21 +138,6 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
       fullWidth
     >
       <DialogContent>
-        <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, pr: 4 }}>
-            {article.title}
-        </Typography>
-
-        <Typography 
-            variant="body1" 
-            paragraph 
-            sx={{ 
-            mt: 2,
-            whiteSpace: 'pre-wrap', // This will preserve line breaks
-            color: 'text.primary',
-            }}
-        >
-            {article.description} {/* Full description without truncation */}
-        </Typography>
         <AnimatedContent
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -126,27 +147,35 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
           <IconButton
             onClick={onClose}
             sx={{ 
-                position: 'absolute',
-                right: '16px',
-                top: '16px',
-                zIndex: 1000,
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                '&:hover': {
+              position: 'absolute',
+              right: '16px',
+              top: '16px',
+              zIndex: 1000,
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              '&:hover': {
                 backgroundColor: 'rgba(255, 255, 255, 1)'
-                },
-                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)'
+              },
+              boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)'
             }}
           >
             <CloseIcon />
           </IconButton>
 
-          {/* <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, pr: 4 }}>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, pr: 4 }}>
             {article.title}
           </Typography>
 
-          <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+          <Typography 
+            variant="body1" 
+            paragraph 
+            sx={{ 
+              mt: 2,
+              whiteSpace: 'pre-wrap',
+              color: 'text.primary',
+            }}
+          >
             {article.description}
-          </Typography> */}
+          </Typography>
 
           <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom>
@@ -184,9 +213,31 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
                   <CircularProgress />
                 </Box>
               ) : perspective ? (
-                <Typography variant="body1">
-                  {perspective}
-                </Typography>
+                <>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {perspective}
+                  </Typography>
+                  
+                  <Button
+                    variant="contained"
+                    onClick={handleGeneratePodcast}
+                    disabled={podcastLoading}
+                    startIcon={<HeadphonesIcon />}
+                    sx={{
+                      borderRadius: '25px',
+                      mt: 2,
+                      backgroundColor: '#1a1a1a',
+                      '&:hover': {
+                        backgroundColor: '#333',
+                        transform: 'translateY(-2px)',
+                        boxShadow: 3,
+                      },
+                      transition: 'all 0.2s ease-in-out',
+                    }}
+                  >
+                    {podcastLoading ? 'Generating Podcast...' : 'Generate Podcast'}
+                  </Button>
+                </>
               ) : selectedPerspective ? (
                 <Typography color="text.secondary">
                   Failed to load perspective. Please try again.
@@ -197,10 +248,34 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
                 </Typography>
               )}
             </Box>
+
+            {audioUrl && (
+              <Box sx={{ 
+                mt: 3,
+                p: 2,
+                backgroundColor: 'rgba(0,0,0,0.03)',
+                borderRadius: '10px',
+              }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  Generated Podcast
+                </Typography>
+                <audio 
+                  controls 
+                  style={{ 
+                    width: '100%',
+                    borderRadius: '10px',
+                  }}
+                >
+                  <source src={audioUrl} type="audio/mpeg" />
+                  Your browser does not support the audio element.
+                </audio>
+              </Box>
+            )}
           </Box>
 
+          <Divider sx={{ my: 3 }} />
+
           <Box sx={{ 
-            mt: 4, 
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
@@ -234,4 +309,3 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
 }
 
 export default ExpandedNewsCard;
-
