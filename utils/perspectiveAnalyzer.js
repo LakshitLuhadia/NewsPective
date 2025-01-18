@@ -23,7 +23,7 @@ async function getPerspectives(article, perspectiveType) {
         3. Be objective and balanced
         4. If there's no meaningful alternative perspective, return "No alternative perspective available"
 
-        Provide the alternative perspective in a concise paragraph.
+        Provide the alternative perspective in a concise paragraph. The response should feel like a thoughtful one from a real human being to the chosen perspective
         `;
 
         const response = await hf.textGeneration({

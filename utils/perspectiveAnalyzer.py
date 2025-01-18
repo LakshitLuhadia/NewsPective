@@ -21,7 +21,7 @@ def get_alternative_perspective(article_text, perspective_type):
     3. Be objective and balanced
     4. If there's no meaningful alternative perspective, return null
     
-    Provide the alternative perspective in a concise paragraph.
+    Provide the alternative perspective in a concise paragraph. The response should feel like a thoughtful one from a real human being to the chosen perspective
     """
 
     client = InferenceClient(token=os.getenv("HUGGINGFACE_API_KEY"))

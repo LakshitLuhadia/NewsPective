@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Grid, Card, CardContent, Typography, Chip, Box, CircularProgress, Button, IconButton } from '@mui/material';
+import { Grid, Card, CardContent, Typography, Chip, Box, CircularProgress, Button} from '@mui/material';
 import { styled } from '@mui/material/styles';
-import AutorenewIcon from '@mui/icons-material/Autorenew';
+// import AutorenewIcon from '@mui/icons-material/Autorenew';
 import { motion } from 'framer-motion';
 import ExpandedNewsCard from './ExpandedNewsCard';
 
@@ -17,43 +17,44 @@ const StyledCard = styled(motion.div)(({ theme, isPerspective }) => ({
   },
 }));
 
-const PerspectiveButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  bottom: '16px',
-  right: '16px',
-  backgroundColor: 'rgba(255,255,255,0.1)',
-  '&:hover': {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-}));
+
+// const PerspectiveButton = styled(IconButton)(({ theme }) => ({
+//   position: 'absolute',
+//   bottom: '16px',
+//   right: '16px',
+//   backgroundColor: 'rgba(255,255,255,0.1)',
+//   '&:hover': {
+//     backgroundColor: 'rgba(255,255,255,0.2)',
+//   },
+// }));
 
 function NewsCard({ article, onExpand }) {
-  const [showPerspective, setShowPerspective] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Remove showPerspective state since we don't need it anymore
   
-  const truncateText = (text, maxLength = 200) => {
-    if (text?.length <= maxLength) return text;
-    return text?.slice(0, maxLength) + '...';
+  const truncateText = (text, maxLength = 150) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
   };
   
   return (
     <StyledCard
-      onClick={onExpand}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
+      onClick={onExpand}
       sx={{ cursor: 'pointer' }}
     >
       <Card 
         sx={{ 
           height: '100%', 
           position: 'relative',
-          backgroundColor: showPerspective ? '#1a1a1a' : '#ffffff',
-          color: showPerspective ? '#ffffff' : '#000000',
+          backgroundColor: '#ffffff',
+          color: '#000000',
           borderRadius: '20px',
         }}
       >
-        <CardContent sx={{ height: '100%', pb: '60px' }}>
+        <CardContent>
           <Typography 
             variant="h6" 
             gutterBottom
@@ -70,35 +71,23 @@ function NewsCard({ article, onExpand }) {
           <Typography 
             variant="body2" 
             sx={{ 
-              color: showPerspective ? '#e0e0e0' : 'text.secondary',
+              color: 'text.secondary',
               mb: 2,
               overflow: 'hidden',
               display: '-webkit-box',
+              WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical',
-              WebkitLineClamp: isExpanded ? 'unset' : 4,
             }}
           >
-            {showPerspective 
-              ? article.perspectives?.alternative || "No alternative perspective available" 
-              : truncateText(article.description)}
+            {truncateText(article.description)}
           </Typography>
 
-          {!isExpanded && article.description?.length > 200 && (
-            <Button 
-              size="small" 
-              onClick={() => setIsExpanded(true)}
-              sx={{ mb: 2 }}
-            >
-              Read More
-            </Button>
-          )}
-
-          <Box sx={{ position: 'absolute', bottom: '16px', left: '16px', right: '16px' }}>
+          <Box sx={{ mt: 'auto' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
               <Typography 
                 variant="caption" 
                 sx={{ 
-                  color: showPerspective ? '#e0e0e0' : 'text.secondary',
+                  color: 'text.secondary',
                   mr: 1
                 }}
               >
@@ -106,7 +95,7 @@ function NewsCard({ article, onExpand }) {
               </Typography>
               <Typography 
                 variant="caption" 
-                sx={{ color: showPerspective ? '#e0e0e0' : 'text.secondary' }}
+                sx={{ color: 'text.secondary' }}
               >
                 {new Date(article.publishedAt).toLocaleDateString()}
               </Typography>
@@ -118,39 +107,17 @@ function NewsCard({ article, onExpand }) {
                 size="small"
                 sx={{ 
                   mr: 1,
-                  backgroundColor: showPerspective ? '#333' : '#f0f0f0',
-                  color: showPerspective ? '#fff' : '#000',
+                  backgroundColor: '#f0f0f0',
                 }}
               />
             )}
-            
-            <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <a 
-                href={article.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ 
-                  textDecoration: 'none',
-                  color: showPerspective ? '#90caf9' : '#1976d2',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                }}
-              >
-                Read Full Article →
-              </a>
-              <PerspectiveButton
-                onClick={() => setShowPerspective(!showPerspective)}
-                title={showPerspective ? "Show Original" : "Show AI Perspective"}
-              >
-                <AutorenewIcon sx={{ color: showPerspective ? '#ffffff' : '#000000' }} />
-              </PerspectiveButton>
-            </Box>
           </Box>
         </CardContent>
       </Card>
     </StyledCard>
   );
 }
+
 
 function NewsFeed() {
   const [news, setNews] = useState([]);

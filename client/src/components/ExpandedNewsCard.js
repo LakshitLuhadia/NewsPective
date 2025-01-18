@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -19,11 +19,24 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
     maxWidth: '800px',
     borderRadius: '20px',
     padding: theme.spacing(2),
-    overflow: 'hidden' // Prevent content overflow
+    '&::-webkit-scrollbar': {
+      width: '6px'
+    },
+    '&::-webkit-scrollbar-track': {
+      background: 'transparent',
+      borderRadius: '10px'
+    },
+    '&::-webkit-scrollbar-thumb': {
+      background: '#888',
+      borderRadius: '10px',
+      '&:hover': {
+        background: '#666'
+      }
+    }
   },
   '& .MuiBackdrop-root': {
-    backdropFilter: 'blur(5px)',
-  },
+    backdropFilter: 'blur(5px)'
+  }
 }));
 
 const PerspectiveButton = styled(Button)(({ theme, selected }) => ({
@@ -49,6 +62,13 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
   const [selectedPerspective, setSelectedPerspective] = useState(null);
   const [loading, setLoading] = useState(false);
   const [perspective, setPerspective] = useState(null);
+
+  useEffect(() => {
+        if (!open) {
+            setSelectedPerspective(null);
+            setPerspective(null);
+        }
+    }, [open]);
 
   // Add null check for article
   if (!article) return null;
@@ -82,6 +102,21 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
       fullWidth
     >
       <DialogContent>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, pr: 4 }}>
+            {article.title}
+        </Typography>
+
+        <Typography 
+            variant="body1" 
+            paragraph 
+            sx={{ 
+            mt: 2,
+            whiteSpace: 'pre-wrap', // This will preserve line breaks
+            color: 'text.primary',
+            }}
+        >
+            {article.description} {/* Full description without truncation */}
+        </Typography>
         <AnimatedContent
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -91,22 +126,27 @@ function ExpandedNewsCard({ open, onClose, article, onRequestPerspective }) {
           <IconButton
             onClick={onClose}
             sx={{ 
-              position: 'absolute', 
-              right: 8, 
-              top: 8,
-              zIndex: 1
+                position: 'absolute',
+                right: '16px',
+                top: '16px',
+                zIndex: 1000,
+                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 1)'
+                },
+                boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)'
             }}
           >
             <CloseIcon />
           </IconButton>
 
-          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, pr: 4 }}>
+          {/* <Typography variant="h5" gutterBottom sx={{ fontWeight: 600, pr: 4 }}>
             {article.title}
           </Typography>
 
           <Typography variant="body1" paragraph sx={{ mt: 2 }}>
             {article.description}
-          </Typography>
+          </Typography> */}
 
           <Box sx={{ mt: 4 }}>
             <Typography variant="h6" gutterBottom>
