@@ -226,17 +226,17 @@
 // app.use(cors());
 // app.use(express.json());
 
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { HfInference } = require('@huggingface/inference');
-const { getNewsFromMultipleSources } = require('./newsApi');
-const { getPerspectives } = require('./utils/perspectiveAnalyzer');
-const { generatePodcastScript } = require('./utils/podcastGenerator');
-const { convertToAudio } = require('./utils/audioGenerator');
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import { HfInference } from '@huggingface/inference';
+import { getNewsFromMultipleSources } from './newsApi.js';
+import { getPerspectives } from './utils/perspectiveAnalyzer.js';
+import { generatePodcastScript } from './utils/podcastGenerator.js';
+import { convertToAudio } from './utils/audioGenerator.js';
+import db from './db.js';
 
-// const { getHistoricalNews, getGNews } = require('./newsApi');
-const db = require('./db');
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -253,85 +253,43 @@ app.get('/', (req, res) => {
     <ul>
       <li><a href="/api/news">/api/news</a> - Fetch latest news</li>
       <li>/api/perspective - Get specific perspective on news (POST)</li>
+      <li>/api/generate-podcast - Generate podcast script (POST)</li>
     </ul>
   `);
 });
 
 app.get('/api/news', async (req, res) => {
   try {
-    console.log('Fetching news from multiple sources...');
-    const allNews = await getNewsFromMultipleSources();
-    console.log(`Successfully fetched ${allNews.length} articles`);
+    const language = req.query.language || 'en';
+    const category = req.query.category || 'top';
+    
+    console.log(`Fetching ${category} news in ${language}`);
+    
+    const allNews = await getNewsFromMultipleSources(language, category);
     res.json(allNews);
   } catch (error) {
-    console.error('Error in /api/news endpoint:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
-    });
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Failed to fetch news' });
   }
 });
 
-// Add this new endpoint for perspectives
 app.post('/api/perspective', async (req, res) => {
-  try {
-    const { article, perspectiveType } = req.body;
-    console.log(`Generating ${perspectiveType} perspective for article: ${article.title}`);
-    
-    if (!article || !perspectiveType) {
-      return res.status(400).json({ 
-        error: 'Bad Request', 
-        message: 'Article and perspective type are required' 
-      });
-    }
-
-    const perspective = await getPerspectives(article, perspectiveType);
-    console.log('Perspective generated successfully');
-    res.json({ perspective: perspective.alternative });
-  } catch (error) {
-    console.error('Error generating perspective:', error);
-    res.status(500).json({ 
-      error: 'Internal server error', 
-      message: error.message 
-    });
-  }
-});
-
-app.post('/api/generate-podcast', async (req, res) => {
     try {
-        const { article, perspective } = req.body;
-        console.log('Received request for podcast generation:', {
-            articleTitle: article.title,
-            perspectiveType: perspective
-        });
+        const { article, perspectiveType, language } = req.body;
+        console.log(`Generating ${perspectiveType} perspective for article: ${article.title}`);
         
-        if (!article || !perspective) {
+        if (!article || !perspectiveType) {
             return res.status(400).json({ 
                 error: 'Bad Request', 
-                message: 'Article and perspective are required' 
+                message: 'Article and perspective type are required' 
             });
         }
 
-        // Generate script
-        console.log('Generating podcast script...');
-        const script = await generatePodcastScript(article, perspective);
-        if (!script) {
-            throw new Error('Failed to generate podcast script');
-        }
-        
-        // Convert to audio
-        console.log('Converting script to audio...');
-        const audioUrl = await convertToAudio(script);
-        if (!audioUrl) {
-            throw new Error('Failed to convert script to audio');
-        }
-        
-        res.json({ 
-            script,
-            audioUrl
-        });
+        const perspective = await getPerspectives(article, perspectiveType, language);
+        console.log('Perspective generated successfully');
+        res.json({ perspective: perspective.alternative });
     } catch (error) {
-        console.error('Error in podcast generation:', error);
+        console.error('Error generating perspective:', error);
         res.status(500).json({ 
             error: 'Internal server error', 
             message: error.message 
@@ -339,16 +297,27 @@ app.post('/api/generate-podcast', async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => {
-  res.send(`
-    <h1>Multi-Perspective News Aggregator API</h1>
-    <p>Available endpoints:</p>
-    <ul>
-      <li><a href="/api/news">/api/news</a> - Fetch latest news</li>
-      <li>/api/perspective - Get specific perspective on news (POST)</li>
-      <li>/api/generate-podcast - Generate podcast script (POST)</li>
-    </ul>
-  `);
+app.post('/api/generate-podcast', async (req, res) => {
+    try {
+        const { article, perspective, language = 'en' } = req.body;
+        console.log(`Generating podcast in ${language}...`);
+        
+        const script = await generatePodcastScript(article, perspective, language);
+        if (!script) {
+            throw new Error('Failed to generate podcast script');
+        }
+        
+        console.log('Converting script to audio...');
+        const audioUrl = await convertToAudio(script, language);
+        if (!audioUrl) {
+            throw new Error('Failed to convert script to audio');
+        }
+        
+        res.json({ audioUrl });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 app.listen(port, () => {
