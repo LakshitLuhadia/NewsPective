@@ -20,8 +20,9 @@ def get_alternative_perspective(article_text, perspective_type):
     2. Present a different but valid viewpoint on the same events
     3. Be objective and balanced
     4. If there's no meaningful alternative perspective, return null
+    5. Perspective refers to how the user will interpret the news
     
-    Provide the alternative perspective in a concise paragraph. The response should feel like a thoughtful one from a real human being to the chosen perspective
+    Provide the alternative perspective in a concise paragraph. Avoid any artificial language. 
     """
 
     client = InferenceClient(token=os.getenv("HUGGINGFACE_API_KEY"))
