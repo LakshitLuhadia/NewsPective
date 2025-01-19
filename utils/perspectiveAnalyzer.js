@@ -1,48 +1,51 @@
-const { HfInference } = require('@huggingface/inference');
-require('dotenv').config();
+import { HfInference } from '@huggingface/inference';
+import { translateToFrench } from './translate.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
-async function getPerspectives(article, perspectiveType) {
+async function getPerspectives(article, perspectiveType, language = 'en') {
     try {
-        const perspectivePrompts = {
-            student: "from a student's viewpoint, considering academic implications and youth perspective",
-            researcher: "from a researcher's analytical viewpoint, focusing on methodology and evidence",
-            expert: "from an expert's professional viewpoint, considering industry implications",
-            general: "from a general adult's everyday perspective, focusing on practical implications"
-        };
-
         const prompt = `
-        Analyze this news article and provide an alternative perspective ${perspectivePrompts[perspectiveType]}:
+        Analyze this news article from a ${perspectiveType} perspective:
+
         Title: ${article.title}
-        Description: ${article.description}
+        Content: ${article.description}
 
-        Rules:
-        1. Don't change the facts of the story
-        2. Present a different but valid viewpoint on the same events
-        3. Be objective and balanced
-        4. If there's no meaningful alternative perspective, return "No alternative perspective available"
-
-        Provide the alternative perspective in a concise paragraph. The response should feel like a thoughtful one from a real human being to the chosen perspective
-        `;
+        Instructions:
+        1. Write your analysis ONLY in English
+        2. Provide a detailed alternative perspective
+        3. Consider implications, causes, and potential consequences
+        4. Humanize your response
+        5. Maintain a professional and objective tone`;
 
         const response = await hf.textGeneration({
-            model: 'mistralai/Mistral-7B-Instruct-v0.2',
+            model: "mistralai/Mistral-7B-Instruct-v0.3",
             inputs: prompt,
             parameters: {
-                max_new_tokens: 250,
+                max_new_tokens: 300,
                 temperature: 0.7,
+                top_p: 0.9,
                 return_full_text: false,
             }
         });
 
+        let cleanedResponse = response.generated_text.replace(/^[-\s]+/, '').trim();
+
+        if (language === 'fr') {
+            console.log('Translating perspective to French...');
+            cleanedResponse = await translateToFrench(cleanedResponse);
+            console.log('Translation completed');
+        }
+
         return {
-            alternative: response.generated_text.trim() || null
+            alternative: cleanedResponse
         };
     } catch (error) {
-        console.error('Error generating perspective:', error);
-        return { alternative: null };
+        console.error('Error in getPerspectives:', error);
+        return null;
     }
 }
 
-module.exports = { getPerspectives };
+export { getPerspectives };

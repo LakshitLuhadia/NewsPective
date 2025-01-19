@@ -12,14 +12,14 @@ def get_alternative_perspective(article_text, perspective_type):
     }
 
     prompt = f"""
-    Analyze this news article and provide an alternative perspective {perspective_prompts[perspective_type]}:
+    If the input is in French, The meaningful output should also be in French. Do NOT translate. Analyze this news article and provide an alternative perspective {perspective_prompts[perspective_type]}:
     {article_text}
     
     Rules:
     1. Don't change the facts of the story
     2. Present a different but valid viewpoint on the same events
     3. Be objective and balanced
-    4. If there's no meaningful alternative perspective, return null
+    4. If there's no meaningful alternative perspective, return "No alternative perspective available". Do not just make up alternatives senselessly
     5. Perspective refers to how the user will interpret the news
     
     Provide the alternative perspective in a concise paragraph. Avoid any artificial language. 
@@ -30,7 +30,7 @@ def get_alternative_perspective(article_text, perspective_type):
     try:
         response = client.text_generation(
             prompt,
-            model="mistralai/Mistral-7B-Instruct-v0.2",
+            model="mistralai/Mistral-7B-Instruct-v0.3",
             max_new_tokens=250,
             temperature=0.7,
         )

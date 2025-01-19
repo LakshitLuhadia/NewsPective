@@ -1,83 +1,62 @@
-// const { HfInference } = require('@huggingface/inference');
-// require('dotenv').config();
-
-// async function generatePodcastScript(article, perspective) {
-//     try {
-//         const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
-        
-//         const prompt = `
-//         Create an engaging podcast script discussing this news article and perspective:
-
-//         News Title: ${article.title}
-//         News Content: ${article.description}
-//         Alternative Perspective: ${perspective}
-
-//         Format the script as a small natural conversation between two hosts named Alex and Jordan:
-//         1. Brief introduction by Alex
-//         2. Main story coverage by Jordan
-//         3. Discussion of the alternative perspective
-//         4. Concluding thoughts from both hosts
-
-//         Make it conversational, engaging, and natural. Avoid any artificial language.
-//         `;
-
-//         const response = await hf.textGeneration({
-//             model: "mistralai/Mistral-7B-Instruct-v0.2",
-//             inputs: prompt,
-//             parameters: {
-//                 max_new_tokens: 200,
-//                 temperature: 0.7,
-//                 return_full_text: false,
-//             }
-//         });
-
-//         return response.generated_text;
-//     } catch (error) {
-//         console.error('Error generating podcast script:', error);
-//         return null;
-//     }
-// }
-
-// module.exports = { generatePodcastScript };
-
-
-const { HfInference } = require('@huggingface/inference');
-require('dotenv').config();
+import { HfInference } from '@huggingface/inference';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
-async function generatePodcastScript(article, perspective) {
+async function generatePodcastScript(article, perspective, language = 'en') {
     try {
         console.log('Starting podcast script generation...');
         
-        const prompt = `
-        Create an engaging podcast script discussing this news article and perspective:
+        let prompt;
+        if (language === 'fr') {
+            prompt = `
+            Créez un script de podcast engageant qui discute de cet article d'actualité et de cette perspective:
 
-        News Title: ${article.title}
-        News Content: ${article.description}
-        Alternative Perspective: ${perspective}
+            Titre: ${article.title}
+            Contenu: ${article.description}
+            Perspective Alternative: ${perspective}
 
-        Format the script EXACTLY as shown below, with clear speaker labels:
-        Alex: [Introduction]
-        Jordan: [Main story coverage]
-        Alex: [Discussion of perspective]
-        Jordan: [Additional insights]
-        Alex: [Concluding thoughts]
+            Format du script (gardez exactement ces indicateurs de dialogue):
+            Alex: [Introduction en français]
+            Jordan: [Présentation des faits principaux]
+            Alex: [Discussion de la perspective]
+            Jordan: [Analyse supplémentaire]
+            Alex: [Conclusion]
 
-        Make sure each line starts with either "Alex:" or "Jordan:" to clearly indicate who is speaking.
-        Keep it natural and conversational.`;
+            Assurez-vous que chaque ligne commence par "Alex:" ou "Jordan:" pour indiquer qui parle.
+            Gardez un ton naturel et conversationnel en français.`;
+        } else {
+            prompt = `
+            Create an engaging podcast script discussing this news article and perspective:
+
+            News Title: ${article.title}
+            News Content: ${article.description}
+            Alternative Perspective: ${perspective}
+
+            Format the script EXACTLY as shown below:
+            Alex: [Introduction]
+            Jordan: [Main story coverage]
+            Alex: [Discussion of perspective]
+            Jordan: [Additional insights]
+            Alex: [Concluding thoughts]
+
+            Make sure each line starts with either "Alex:" or "Jordan:" to clearly indicate who is speaking.
+            Keep it natural and conversational.`;
+        }
 
         const response = await hf.textGeneration({
-            model: "mistralai/Mistral-7B-Instruct-v0.2",
+            model: "mistralai/Mistral-7B-Instruct-v0.3",
             inputs: prompt,
             parameters: {
                 max_new_tokens: 500,
                 temperature: 0.7,
+                top_p: 0.9,
                 return_full_text: false,
             }
         });
 
-        console.log('Script generation completed');
+        console.log(`Script generated in ${language}`);
         return response.generated_text;
     } catch (error) {
         console.error('Error in generatePodcastScript:', error);
@@ -85,4 +64,4 @@ async function generatePodcastScript(article, perspective) {
     }
 }
 
-module.exports = { generatePodcastScript };
+export { generatePodcastScript };
