@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Grid, Card, CardContent, Typography, Chip, Box, CircularProgress, Button} from '@mui/material';
 import { styled } from '@mui/material/styles';
-// import AutorenewIcon from '@mui/icons-material/Autorenew';
 import { motion } from 'framer-motion';
 import ExpandedNewsCard from './ExpandedNewsCard';
 
 const StyledCard = styled(motion.div)(({ theme, isPerspective }) => ({
-  height: '400px', // Fixed height
-  borderRadius: '20px', // More rounded corners
+  height: '400px',
+  borderRadius: '20px',
   backgroundColor: isPerspective ? '#1a1a1a' : '#ffffff',
   color: isPerspective ? '#ffffff' : '#000000',
   transition: 'all 0.3s ease',
@@ -18,19 +17,7 @@ const StyledCard = styled(motion.div)(({ theme, isPerspective }) => ({
 }));
 
 
-// const PerspectiveButton = styled(IconButton)(({ theme }) => ({
-//   position: 'absolute',
-//   bottom: '16px',
-//   right: '16px',
-//   backgroundColor: 'rgba(255,255,255,0.1)',
-//   '&:hover': {
-//     backgroundColor: 'rgba(255,255,255,0.2)',
-//   },
-// }));
-
 function NewsCard({ article, onExpand }) {
-  // Remove showPerspective state since we don't need it anymore
-  
   const truncateText = (text, maxLength = 150) => {
     if (!text) return '';
     if (text.length <= maxLength) return text;
